@@ -44,7 +44,7 @@ export const useChatStore = defineStore("chat", () => {
   const recentMessages = computed(() => {
     return [...messages].sort((a, b) => a.timestamp - b.timestamp);
   });
-  //   将历史消息转化为大模型需要的形式
+  // 将历史消息转化为大模型需要的形式
   const formatMessagesForLLM = computed(() => {
     return messages.map((msg) => ({
       role: msg.role,

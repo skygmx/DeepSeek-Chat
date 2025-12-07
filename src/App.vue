@@ -1,31 +1,18 @@
 <script setup>
-import { chatWithDeepSeek } from "./hooks/fetch";
 import { marked } from "marked";
 import hljs from "highlight.js";
 import { ref, computed, onUnmounted } from "vue";
 import { useChatStore } from "./stores/chatStores";
+import { readableStream } from "./hooks/readableStream";
 
 // 使用pinia仓库状态管理
 const chatStore = useChatStore();
 // 定义响应式输入输出变量
 let message = ref("");
-let response = ref(null);
-const loading = ref(false); // 加载状态
+let loading = ref(false); // 加载状态
 let eventSource = null; // SSE连接实例（全局变量，方便卸载时关闭）
-// 点击时发送请求函数
-function resquest() {
-  response.value = "al回答中，请等待...";
-  a();
-  console.log(message.value);
-}
-// 异步请求方法
-async function a() {
-  response.value = await chatWithDeepSeek(message.value);
-  responseText.value = response.value;
-  message.value = "";
-}
 
-// markdown渲染处理区域
+// markdown渲染处理区域，这块也可以拖出去封装，后面做吧。
 
 // markdown配置
 marked.setOptions({
@@ -57,6 +44,29 @@ const renderedMarkdown = (content) => {
   });
   return marked.parse(content);
 };
+
+// ====================== 使用改进后的请求处理函数 ======================
+const { abortController, sendRequestWithStream } = readableStream(
+  message,
+  loading
+);
+
+function sendRequestWithKey(e) {
+  // 如果按的是 Shift + Enter，允许换行
+  if (e.shiftKey) {
+    return; // 不阻止默认行为，正常换行
+  }
+
+  // 单独按 Enter，阻止换行，执行发送
+  e.preventDefault();
+  sendRequestWithStream();
+}
+// 组件卸载时取消请求
+onUnmounted(() => {
+  if (abortController) abortController.abort();
+});
+
+// ===================================================================
 
 // ====================== 3. SSE流式请求核心逻辑 ======================
 let currentAssistantId = "";
@@ -176,9 +186,12 @@ onUnmounted(() => {
         type="textarea"
         v-model="message"
         placeholder="请输入你要发送的文本"
-        @keydown.enter="sendRequestWithSSE"
+        @keydown.enter="sendRequestWithKey"
       />
-      <el-button type="primary" @click="sendRequestWithSSE" :disabled="loading"
+      <el-button
+        type="primary"
+        @click="sendRequestWithStream"
+        :disabled="loading"
         >点击发送请求</el-button
       >
     </div>
