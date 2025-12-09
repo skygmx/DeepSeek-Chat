@@ -1,12 +1,25 @@
 <script setup>
 import { marked } from "marked";
 import hljs from "highlight.js";
-import { ref, computed, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { useChatStore } from "./stores/chatStores";
 import { readableStream } from "./hooks/readableStream";
-
+import chatSide from "./components/chatSide.vue";
+import { useConversationStore } from "./stores/conversationStores";
 // 使用pinia仓库状态管理
 const chatStore = useChatStore();
+const conversationStore = useConversationStore();
+
+// 组件初始化时
+// 1. 页面加载初始化会话
+onMounted(() => {
+  conversationStore.initConversations();
+
+  // 手动绑定卸载事件
+  window.addEventListener("beforeunload", () => {
+    conversationStore.saveToLocal(); // ✅ 直接调用！和数组版完全一样
+  });
+});
 // 定义响应式输入输出变量
 let message = ref("");
 let loading = ref(false); // 加载状态
@@ -59,147 +72,87 @@ function sendRequestWithKey(e) {
 
   // 单独按 Enter，阻止换行，执行发送
   e.preventDefault();
+  conversationStore.saveToLocal;
   sendRequestWithStream();
 }
+
+// ======================组件卸载时保存消息到本地，取消请求 ======================
+onUnmounted(() => {
+  window.removeEventListener("beforeunload", () => {
+    conversationStore.saveToLocal();
+  });
+});
 // 组件卸载时取消请求
 onUnmounted(() => {
   if (abortController) abortController.abort();
 });
-
-// ===================================================================
-
-// ====================== 3. SSE流式请求核心逻辑 ======================
-let currentAssistantId = "";
-const sendRequestWithSSE = () => {
-  // 空输入校验
-  const trimedText = message.value.trim();
-  if (!trimedText || loading.value) return;
-  message.value = "";
-  // 添加用户消息
-  chatStore.addUserMessage(trimedText);
-  // 添加ai消息占位
-  currentAssistantId = chatStore.addAssistantMessage();
-  // 重置状态
-  loading.value = true;
-  responseText.value = "";
-  // 关闭之前的SSE连接（避免重复连接）
-  if (eventSource) eventSource.close();
-
-  // 构建SSE请求地址（拼接参数，encodeURIComponent处理特殊字符）
-  const history = JSON.stringify(chatStore.formatMessagesForLLM);
-  const sseUrl = `http://localhost:3000/api/deepseek/sse?message=${encodeURIComponent(
-    history
-  )}`;
-
-  // 建立SSE连接
-  eventSource = new EventSource(sseUrl);
-
-  // ✅ 监听SSE消息（核心：接收后端推送的流式数据）
-  eventSource.onmessage = (e) => {
-    // 后端发送[DONE]表示流式结束
-    if (e.data === "[DONE]") {
-      eventSource.close();
-      loading.value = false;
-      return;
-    }
-
-    try {
-      // 解析后端转发的DeepSeek数据
-      const json = JSON.parse(e.data);
-      // 处理错误（后端返回的异常）
-      if (json.error) {
-        responseText.value = `❌ 错误：${json.error}`;
-        eventSource.close();
-        loading.value = false;
-        return;
-      }
-      // 提取流式内容并累积
-      const content = json.choices[0]?.delta?.content || "";
-      if (content) {
-        chatStore.updateAssistantMessage(currentAssistantId, content);
-      }
-    } catch (err) {
-      // 解析失败的容错处理
-      responseText.value += `\n\n⚠️ 数据解析异常：${err.message}`;
-      eventSource.close();
-      loading.value = false;
-    }
-  };
-
-  // ✅ 监听SSE连接错误
-  eventSource.onerror = (err) => {
-    console.error("SSE连接异常：", err);
-    responseText.value = `❌ 连接失败：${
-      err.message || "请检查后端代理是否启动"
-    }`;
-    eventSource.close();
-    loading.value = false;
-  };
-
-  // ✅ 监听SSE连接成功
-  eventSource.onopen = () => {
-    console.log("✅ SSE连接已建立，等待回答...");
-  };
-};
-
-// ====================== 4. 组件卸载时清理资源 ======================
-onUnmounted(() => {
-  // 关闭SSE连接，防止内存泄漏
-  if (eventSource) eventSource.close();
-});
 </script>
 
 <template>
-  <div class="container">
-    <div class="chat-history">
-      <!-- 遍历Pinia中的对话历史 -->
-      <div
-        v-for="msg in chatStore.recentMessages"
-        :key="msg.id"
-        :class="['message-item', `role-${msg.role}`]"
-      >
-        <!-- 用户消息 -->
-        <div v-if="msg.role === 'user'" class="user-message">
-          <span class="role-label">你</span>
-          <div class="content">{{ msg.content }}</div>
-        </div>
+  <div class="main-container">
+    <!-- 多轮对话侧边栏 -->
 
-        <!-- AI消息（Markdown渲染） -->
-        <div v-if="msg.role === 'assistant'" class="assistant-message">
-          <span class="role-label">DeepSeek</span>
-          <div
-            class="markdown-body content"
-            v-html="renderedMarkdown(msg.content)"
-          ></div>
+    <div class="sider">
+      <chat-side></chat-side>
+    </div>
+    <div class="chat-container">
+      <div class="chat-history">
+        <!-- 遍历Pinia中的对话历史 -->
+        <div
+          v-for="msg in chatStore.recentMessages"
+          :key="msg.id"
+          :class="['message-item', `role-${msg.role}`]"
+        >
+          <!-- 用户消息 -->
+          <div v-if="msg.role === 'user'" class="user-message">
+            <span class="role-label">你</span>
+            <div class="content">{{ msg.content }}</div>
+          </div>
+
+          <!-- AI消息（Markdown渲染） -->
+          <div v-if="msg.role === 'assistant'" class="assistant-message">
+            <span class="role-label">DeepSeek</span>
+            <div
+              class="markdown-body content"
+              v-html="renderedMarkdown(msg.content)"
+            ></div>
+          </div>
         </div>
       </div>
-    </div>
-    <!-- ai回复渲染,直接渲染的这个不要了，用markdown渲染的 -->
-    <!-- <div>deepseek回复：{{ response }}</div> -->
-    <!-- markdown输出渲染区域 -->
-    <!-- <div class="markdown-body output-area" v-html="renderedMarkdown"></div> -->
-    <!-- input组件绑定输入框消息 -->
-    <div class="button">
-      <el-input
-        style="width: 400px"
-        :autosize="{ minRows: 1, maxRows: 6 }"
-        type="textarea"
-        v-model="message"
-        placeholder="请输入你要发送的文本"
-        @keydown.enter="sendRequestWithKey"
-      />
-      <el-button
-        type="primary"
-        @click="sendRequestWithStream"
-        :disabled="loading"
-        >点击发送请求</el-button
-      >
+      <!-- ai回复渲染,直接渲染的这个不要了，用markdown渲染的 -->
+      <!-- <div>deepseek回复：{{ response }}</div> -->
+      <!-- markdown输出渲染区域 -->
+      <!-- <div class="markdown-body output-area" v-html="renderedMarkdown"></div> -->
+      <!-- input组件绑定输入框消息 -->
+      <div class="button">
+        <el-input
+          style="width: 400px"
+          :autosize="{ minRows: 1, maxRows: 6 }"
+          type="textarea"
+          v-model="message"
+          placeholder="请输入你要发送的文本"
+          @keydown.enter="sendRequestWithKey"
+        />
+        <el-button
+          type="primary"
+          @click="sendRequestWithStream"
+          :disabled="loading"
+          >点击发送请求</el-button
+        >
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.container {
+.main-container {
+  display: flex;
+}
+.sider {
+  width: 10%;
+}
+.chat-container {
+  width: 90%;
   display: flex;
   flex-direction: column;
   align-items: center;
