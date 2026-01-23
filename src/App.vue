@@ -161,6 +161,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  background-color: antiquewhite;
 }
 .chat-history {
   width: 90%;
@@ -217,7 +218,7 @@ onUnmounted(() => {
 }
 
 .assistant-message .content {
-  background-color: white;
+  background-color: rgb(154, 209, 239);
   border: 1px solid #e2e8f0;
 }
 .button {
