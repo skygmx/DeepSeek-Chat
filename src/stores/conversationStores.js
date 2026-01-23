@@ -82,6 +82,7 @@ export const useConversationStore = defineStore("conversations", () => {
         // 激活第一个会话
         if (conversations.size > 0) {
           currentId.value = Array.from(conversations.keys())[0];
+          switchConversation(currentId.value);
         }
       } else {
         // 首次打开，创建默认会话

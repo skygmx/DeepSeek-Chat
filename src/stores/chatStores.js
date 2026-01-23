@@ -4,10 +4,22 @@ import { computed, ref } from "vue";
 export const useChatStore = defineStore("chat", () => {
   // 定义用户消息列表
   const messages = ref([]);
+  // 定义用户输入框内容
+  const inputMessage = ref("");
 
   // 从对话列表中获取message
   function getMessage(object) {
     messages.value = object.messagelist;
+  }
+
+  // 更新用户输入框内容
+  function updateInputMessage(content) {
+    inputMessage.value = content;
+  }
+
+  // 清空用户输入框内容
+  function clearInputMessage() {
+    inputMessage.value = "";
   }
   // 添加用户消息
   function addUserMessage(content) {
@@ -58,11 +70,14 @@ export const useChatStore = defineStore("chat", () => {
   });
   return {
     messages,
+    inputMessage,
     getMessage,
     addAssistantMessage,
     addUserMessage,
     updateAssistantMessage,
     clearMessages,
+    updateInputMessage,
+    clearInputMessage,
     recentMessages,
     formatMessagesForLLM,
   };

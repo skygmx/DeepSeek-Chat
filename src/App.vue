@@ -1,10 +1,11 @@
 <script setup>
 import { marked } from "marked";
 import hljs from "highlight.js";
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useChatStore } from "./stores/chatStores";
-import { readableStream } from "./hooks/readableStream";
+import { readableStream } from "./hooks/FetchStream";
 import chatSide from "./components/chatSide.vue";
+import webSpeech from "./components/webSpeech.vue";
 import { useConversationStore } from "./stores/conversationStores";
 // 使用pinia仓库状态管理
 const chatStore = useChatStore();
@@ -21,9 +22,13 @@ onMounted(() => {
   });
 });
 // 定义响应式输入输出变量
-let message = ref("");
 let loading = ref(false); // 加载状态
-let eventSource = null; // SSE连接实例（全局变量，方便卸载时关闭）
+
+// 从chatStore获取用户输入内容
+const message = computed({
+  get: () => chatStore.inputMessage,
+  set: (value) => chatStore.updateInputMessage(value),
+});
 
 // markdown渲染处理区域，这块也可以拖出去封装，后面做吧。
 
@@ -133,6 +138,7 @@ onUnmounted(() => {
           placeholder="请输入你要发送的文本"
           @keydown.enter="sendRequestWithKey"
         />
+        <web-speech></web-speech>
         <el-button
           type="primary"
           @click="sendRequestWithStream"
@@ -217,6 +223,7 @@ onUnmounted(() => {
 }
 .button {
   padding: 20px;
+  display: flex;
 }
 .output-area {
   padding: 24px;
