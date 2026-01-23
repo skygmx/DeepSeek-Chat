@@ -79,7 +79,7 @@ const toggleSpeechRecognition = () => {
         () => {
           isListening.value = false;
           currentText.value = "";
-        }
+        },
       );
     } catch (error) {
       console.error("启动语音识别失败:", error);
@@ -130,32 +130,133 @@ const toggleSpeechRecognition = () => {
 </template>
 
 <style scoped>
+/* 导入全局变量 */
+
+/* 语音识别容器 */
 .web-speech-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* 语音按钮包装器 */
 .speech-button-wrapper {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
 }
 
+/* 语音按钮样式 */
+.speech-button-wrapper .el-button {
+  transition: all 0.2s ease;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.1),
+    0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.speech-button-wrapper .el-button:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.speech-button-wrapper .el-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 录音中状态按钮 */
+.speech-button-wrapper .el-button[type="danger"] {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* 语音状态显示 */
 .speech-status {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  padding: 8px 16px;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  animation: slideIn 0.3s ease-out;
 }
 
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 临时识别结果输入框 */
 .interim-result {
-  width: 200px;
-  background-color: #f5f7fa;
-  border-color: #e4e7ed;
+  width: 250px;
+  background-color: #ffffff;
+  border-color: #fee2e2;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  transition: all 0.2s ease;
 }
 
+.interim-result:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* 禁用状态图标 */
 .speech-icon-disabled {
-  color: #c0c4cc;
-  font-size: 20px;
+  color: #94a3b8;
+  font-size: 24px;
+  opacity: 0.6;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .web-speech-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .speech-status {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .interim-result {
+    width: 100%;
+  }
 }
 </style>
