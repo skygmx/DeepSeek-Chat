@@ -46,7 +46,7 @@ export function readableStream(inputText, loading) {
       const decoder = new TextDecoder("utf-8");
       // 创建parser实例，定义回调函数
       const parser = createParser({
-        onEvent: (event) => {
+        onEvent(event) {
           const data = event.data;
           if (data === "[DONE]") return;
           let json;
@@ -62,7 +62,7 @@ export function readableStream(inputText, loading) {
             chatStore.updateAssistantMessage(currentAssistantId, content);
           }
         },
-        onError: (err) => {
+        onError(err) {
           console.error("SSE 协议错误", err);
         },
       });
@@ -71,7 +71,7 @@ export function readableStream(inputText, loading) {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        // 重构：把解码出来的词传给parser
+        // 重构：把解码出来的词传给parser，回调函数处理解析后直接更新到仓库就好了
         parser.feed(chunk);
       }
     } catch (err) {

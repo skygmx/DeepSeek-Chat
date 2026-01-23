@@ -16,9 +16,9 @@ const conversationStore = useConversationStore();
 onMounted(() => {
   conversationStore.initConversations();
 
-  // 手动绑定卸载事件
+  // 添加监听事件，监听用户离开页面时，执行保存消息操作
   window.addEventListener("beforeunload", () => {
-    conversationStore.saveToLocal(); // ✅ 直接调用！和数组版完全一样
+    conversationStore.saveToLocal(); //
   });
 });
 // 定义响应式输入输出变量
@@ -66,7 +66,7 @@ const renderedMarkdown = (content) => {
 // ====================== 使用改进后的请求处理函数 ======================
 const { abortController, sendRequestWithStream } = readableStream(
   message,
-  loading
+  loading,
 );
 
 function sendRequestWithKey(e) {
@@ -74,7 +74,6 @@ function sendRequestWithKey(e) {
   if (e.shiftKey) {
     return; // 不阻止默认行为，正常换行
   }
-
   // 单独按 Enter，阻止换行，执行发送
   e.preventDefault();
   conversationStore.saveToLocal;
