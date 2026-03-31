@@ -5,22 +5,31 @@
 import { useChatStore } from "../stores/chatStores";
 import { createParser } from "eventsource-parser";
 
-export function readableStream(inputText, loading) {
+export function readableStream(inputText, loading, options = {}) {
   const chatStore = useChatStore();
   let currentAssistantId = "";
   let abortController = null;
+
+  function cancelRequest() {
+    if (abortController) {
+      abortController.abort();
+      abortController = null;
+    }
+  }
+
   async function sendRequestWithStream() {
     const trimedText = inputText.value.trim();
-    inputText.value = "";
     if (!trimedText || loading.value) return;
+    inputText.value = "";
     // 添加用户消息
     chatStore.addUserMessage(trimedText);
+    options.onUserMessage?.(trimedText);
     // 添加ai消息占位
     currentAssistantId = chatStore.addAssistantMessage();
     // 此时可以发送消息了，发送消息前重置状态
     loading.value = true;
     // 取消之前的请求（避免重复请求）
-    if (abortController) abortController.abort();
+    cancelRequest();
     abortController = new AbortController();
     // 发送post请求
     try {
@@ -85,7 +94,8 @@ export function readableStream(inputText, loading) {
       }
     } finally {
       loading.value = false;
+      abortController = null;
     }
   }
-  return { abortController, sendRequestWithStream };
+  return { cancelRequest, sendRequestWithStream };
 }

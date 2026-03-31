@@ -1,153 +1,164 @@
 <script setup>
 import { useConversationStore } from "../stores/conversationStores";
+
 const conversationStore = useConversationStore();
 </script>
 
 <template>
   <div class="sider">
-    <div class="button">
-      <el-button type="primary" round @click="conversationStore.addConversation"
-        >点击新建对话</el-button
-      >
+    <div class="sidebar-header">
+      <p class="eyebrow">Workspace</p>
+      <h2>DeepSeek Chat</h2>
+      <p class="sidebar-copy">在这里切换上下文，保留每一段对话痕迹。</p>
+      <el-button type="primary" round @click="conversationStore.addConversation">
+        新建对话
+      </el-button>
     </div>
-    <div class="conversition">
+
+    <div class="conversation-list">
       <div
-        class="session"
         v-for="item in conversationStore.conversationList"
         :key="item.id"
-        @click="conversationStore.switchConversation(item.id)"
+        class="session"
         :class="{ strong: item.id === conversationStore.currentId }"
+        @click="conversationStore.switchConversation(item.id)"
       >
-        <el-card
-          style="width: 220px"
-          :class="{ strong: item.id === conversationStore.currentId }"
-          ><p>{{ item.tittle }}</p>
+        <el-card :class="{ strong: item.id === conversationStore.currentId }">
+          <p>{{ item.tittle }}</p>
+          <span>{{ item.messagelist.length }} 条消息</span>
         </el-card>
       </div>
     </div>
   </div>
 </template>
-<style scoped>
-/* 导入全局变量 */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
 
-/* 侧边栏容器 */
+<style scoped>
 .sider {
   height: 100%;
   width: 100%;
   display: flex;
   flex-direction: column;
-  font-family:
-    "Inter",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at top, rgba(96, 165, 250, 0.25), transparent 35%),
+    linear-gradient(180deg, #0f172a 0%, #111827 100%);
 }
 
-/* 新建对话按钮区域 */
-.button {
-  padding: 16px;
+.sidebar-header {
+  padding: 28px 22px 22px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+.sidebar-header h2 {
   margin: 0;
-  border-bottom: 1px solid #e2e8f0;
-  background-color: #ffffff;
+  font-size: 28px;
+  line-height: 1.1;
 }
 
-/* 会话列表区域 */
-.conversition {
+.sidebar-copy {
+  margin: 10px 0 18px;
+  line-height: 1.5;
+  color: rgba(226, 232, 240, 0.8);
+}
+
+.sidebar-header .el-button {
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  font-weight: 600;
+  background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%);
+}
+
+.conversation-list {
   flex: 1;
   width: 100%;
   overflow-y: auto;
-  padding: 8px;
-  background-color: #f8fafc;
+  padding: 14px 12px 18px;
 }
 
-/* 会话项样式 */
 .session {
-  margin-bottom: 8px;
-  transition: all 0.2s ease;
+  margin-bottom: 10px;
+  transition: transform 0.2s ease;
 }
 
 .session:hover {
   transform: translateX(4px);
 }
 
-/* 会话卡片样式 */
 .session .el-card {
   width: 100%;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  transition: all 0.2s ease;
   cursor: pointer;
-  background-color: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.66);
+  backdrop-filter: blur(14px);
+  box-shadow: none;
+  transition: all 0.2s ease;
 }
 
 .session .el-card:hover {
-  box-shadow:
-    0 4px 6px -1px rgb(0 0 0 / 0.1),
-    0 2px 4px -2px rgb(0 0 0 / 0.1);
-  border-color: #dbeafe;
+  border-color: rgba(125, 211, 252, 0.4);
+  background: rgba(30, 41, 59, 0.86);
 }
 
-/* 当前选中会话样式 */
 .session .el-card.strong {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  background-color: #eff6ff;
+  border-color: rgba(56, 189, 248, 0.6);
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(59, 130, 246, 0.2)),
+    rgba(15, 23, 42, 0.92);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
 }
 
-/* 会话标题样式 */
 .session .el-card p {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: #1e293b;
-  white-space: nowrap;
+  margin: 0 0 6px;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 12px;
-}
-
-/* 当前选中会话标题样式 */
-.session .el-card.strong p {
-  color: #3b82f6;
+  white-space: nowrap;
+  font-size: 15px;
   font-weight: 600;
+  color: #f8fafc;
 }
 
-/* 滚动条样式优化 */
-.conversition::-webkit-scrollbar {
+.session .el-card span {
+  font-size: 12px;
+  color: rgba(191, 219, 254, 0.72);
+}
+
+.conversation-list::-webkit-scrollbar {
   width: 6px;
 }
 
-.conversition::-webkit-scrollbar-track {
-  background: #f1f5f9;
+.conversation-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.conversation-list::-webkit-scrollbar-thumb {
   border-radius: 3px;
+  background: rgba(148, 163, 184, 0.35);
 }
 
-.conversition::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-  transition: background 0.2s ease;
+.conversation-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(125, 211, 252, 0.45);
 }
 
-.conversition::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* 响应式设计 */
 @media (max-width: 768px) {
-  .button {
-    padding: 12px;
+  .sidebar-header {
+    padding: 22px 18px 18px;
   }
 
-  .conversition {
-    padding: 4px;
+  .sidebar-header h2 {
+    font-size: 24px;
   }
 
-  .session .el-card p {
-    font-size: 13px;
+  .conversation-list {
     padding: 10px;
   }
 }
